@@ -385,7 +385,16 @@ border-radius: 4px;
 </div>
 </fieldset>
 
-<!-- SECTION 7: WITNESSES -->
+<!-- SECTION 7: PREVENTION -->
+<fieldset>
+<legend>Prevention</legend>
+<div class="form-group">
+<label for="prevention">How can we help prevent this from happening again?</label>
+<textarea id="prevention" rows="4" placeholder="Optional - any suggestions from the people involved"></textarea>
+</div>
+</fieldset>
+
+<!-- SECTION 8: WITNESSES -->
 <fieldset>
 <legend>Witness Details</legend>
 <div class="form-group" style="margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
@@ -584,6 +593,7 @@ dateOfIncident: document.getElementById('dateOfIncident').value || "",
 injuryTypes: checkedInjuries.join(', '),
 incidentDetails: detailsValue,
 incidentOutcome: incidentOutcome,
+prevention: document.getElementById('prevention').value || "",
 witness1Name: document.getElementById('witness1Name').value || "",
 witness1Mobile: document.getElementById('witness1Mobile').value || "",
 witness2Name: document.getElementById('witness2Name').value || "",
