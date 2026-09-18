@@ -133,6 +133,7 @@ body { padding: 10px; }
 .form-container { padding: 18px 15px; }
 fieldset { padding: 15px 12px; }
 legend { font-size: 1rem; }
+.other-detail { margin-left: 0 !important; }
 }
 
 /* Accessible radio & checkbox styling for mobile fingers */
@@ -147,11 +148,23 @@ width: 22px;
 height: 22px;
 margin-right: 12px;
 cursor: pointer;
+flex-shrink: 0;
 }
 .choice-group label {
 margin-bottom: 0;
 cursor: pointer;
 font-weight: normal;
+}
+
+/* "Please specify" box that appears under an Other option */
+.other-detail {
+margin: -2px 0 14px 34px;
+}
+.other-detail label {
+font-weight: normal;
+font-size: 0.9rem;
+margin-bottom: 4px;
+color: #605e5c;
 }
 
 /* Mobile optimization for file upload button */
@@ -264,32 +277,41 @@ border-radius: 4px;
 <input type="radio" id="typeMiss" name="incidentType" value="Near Miss">
 <label for="typeMiss">Near miss</label>
 </div>
+<div class="choice-group">
+<input type="radio" id="typeOther" name="incidentType" value="Other">
+<label for="typeOther">Other</label>
+</div>
+<div class="other-detail" id="typeOtherWrap" style="display:none;">
+<label for="typeOtherText">Please specify <span class="required">*</span></label>
+<input type="text" id="typeOtherText" placeholder="Describe the type of incident">
+</div>
 </fieldset>
 
 <!-- SECTION 3: PERSONAL DETAILS -->
 <fieldset>
 <legend>Personal Details (Person Involved)</legend>
 <div class="form-group">
-<label for="involvedName">Name of person/s involved</label>
-<input type="text" id="involvedName">
+<label for="involvedName">Name of person/s involved <span class="required">*</span></label>
+<input type="text" id="involvedName" required aria-required="true">
 </div>
 <div class="form-group">
 <label for="involvedMobile">Mobile Number</label>
 <input type="tel" id="involvedMobile">
 </div>
 <div class="form-group">
-<label for="involvedEmployer">Employer</label>
-<input type="text" id="involvedEmployer">
+<label for="involvedEmployer">Employer <span class="required">*</span></label>
+<input type="text" id="involvedEmployer" required aria-required="true">
 </div>
 <div class="form-group">
-<label for="dateOfIncident">Date of Incident</label>
-<input type="date" id="dateOfIncident">
+<label for="dateOfIncident">Date of Incident <span class="required">*</span></label>
+<input type="date" id="dateOfIncident" required aria-required="true">
 </div>
 </fieldset>
 
 <!-- SECTION 4: TYPE OF INJURY -->
+<!-- Injury Types is a free-text column in SharePoint, so custom text is safe here -->
 <fieldset>
-<legend>Type of Injury (If applicable)</legend>
+<legend>Type of Injury</legend>
 <div class="choice-group">
 <input type="checkbox" id="injuryBurn" name="injuryType" value="Burn">
 <label for="injuryBurn">Burn</label>
@@ -314,6 +336,14 @@ border-radius: 4px;
 <input type="checkbox" id="injurySuperficial" name="injuryType" value="Superficial injury">
 <label for="injurySuperficial">Superficial injury</label>
 </div>
+<div class="choice-group">
+<input type="checkbox" id="injuryOther" name="injuryType" value="Other">
+<label for="injuryOther">Other</label>
+</div>
+<div class="other-detail" id="injuryOtherWrap" style="display:none;">
+<label for="injuryOtherText">Please specify <span class="required">*</span></label>
+<input type="text" id="injuryOtherText" placeholder="Describe the injury">
+</div>
 </fieldset>
 
 <!-- SECTION 5: DETAILS -->
@@ -328,9 +358,9 @@ border-radius: 4px;
 <!-- SECTION 6: OUTCOME -->
 <!-- values must match the SharePoint 'Outcome of Incident' choices exactly -->
 <fieldset>
-<legend>Outcome of Incident</legend>
+<legend>Outcome of Incident <span class="required">*</span></legend>
 <div class="choice-group">
-<input type="radio" id="outcomeDoctor" name="incidentOutcome" value="Taken to Doctor">
+<input type="radio" id="outcomeDoctor" name="incidentOutcome" value="Taken to Doctor" required>
 <label for="outcomeDoctor">Taken to doctor</label>
 </div>
 <div class="choice-group">
@@ -348,6 +378,10 @@ border-radius: 4px;
 <div class="choice-group">
 <input type="radio" id="outcomeOther" name="incidentOutcome" value="Other">
 <label for="outcomeOther">Other</label>
+</div>
+<div class="other-detail" id="outcomeOtherWrap" style="display:none;">
+<label for="outcomeOtherText">Please specify <span class="required">*</span></label>
+<input type="text" id="outcomeOtherText" placeholder="Describe the outcome">
 </div>
 </fieldset>
 
@@ -383,12 +417,7 @@ border-radius: 4px;
 </div>
 
 <script>
-// ============================================================
-// PASTE THE NEW "Incident Report - Intake" TRIGGER URL HERE.
-// The URL below still points at the OLD suspended flow.
-// Power Automate > Incident Report - Intake > Edit > click the
-// "manual" trigger > copy the HTTP URL field.
-// ============================================================
+// Trigger URL for the "Incident Report - Intake" flow
 const webhookUrl = "https://defaultbfb72bc2b4744f8398fb1a61d4008d.51.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/09/workflows/da53193f4393426fa7633feae690901f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SYCddLLD8txcubbKBmxJl2SDKOZlt_6BxqLz6K0LGxY";
 
 const SITES = {
@@ -429,6 +458,36 @@ siteCodeInput.value = siteSelect.value;
 
 // Set today's date automatically as default on load
 document.getElementById('dateReported').valueAsDate = new Date();
+
+// ---- "Other" options: show the specify box only when Other is chosen ----
+function wireOther(triggerId, wrapId, textId) {
+const trigger = document.getElementById(triggerId);
+const wrap = document.getElementById(wrapId);
+const text = document.getElementById(textId);
+const group = trigger.type === 'radio'
+? document.querySelectorAll('input[name="' + trigger.name + '"]')
+: [trigger];
+
+const sync = () => {
+const on = trigger.checked;
+wrap.style.display = on ? 'block' : 'none';
+text.required = on;
+if (!on) text.value = '';
+};
+group.forEach(el => el.addEventListener('change', sync));
+sync();
+return sync;
+}
+// Keep the sync functions so they can be re-run after form.reset()
+// without attaching a second set of listeners each time.
+const otherSyncs = [
+wireOther('typeOther', 'typeOtherWrap', 'typeOtherText'),
+wireOther('injuryOther', 'injuryOtherWrap', 'injuryOtherText'),
+wireOther('outcomeOther', 'outcomeOtherWrap', 'outcomeOtherText')
+];
+
+// Type of Injury is optional - a near miss or vehicle accident may involve none.
+const injuryBoxes = Array.from(document.querySelectorAll('input[name="injuryType"]'));
 
 // Show how many files are attached
 fileInput.addEventListener('change', function () {
@@ -480,10 +539,36 @@ statusDiv.innerText = "Please select which site this report is for.";
 return;
 }
 
+const incidentType = document.querySelector('input[name="incidentType"]:checked')?.value || "";
+const incidentOutcome = document.querySelector('input[name="incidentOutcome"]:checked')?.value || "";
+const typeOtherText = document.getElementById('typeOtherText').value.trim();
+const injuryOtherText = document.getElementById('injuryOtherText').value.trim();
+const outcomeOtherText = document.getElementById('outcomeOtherText').value.trim();
+
+// Injury Types is a free-text column, so the custom wording can go straight in
 const checkedInjuries = [];
-document.querySelectorAll('input[name="injuryType"]:checked').forEach((checkbox) => {
+injuryBoxes.forEach((checkbox) => {
+if (!checkbox.checked) return;
+if (checkbox.value === 'Other') {
+checkedInjuries.push(injuryOtherText ? 'Other: ' + injuryOtherText : 'Other');
+} else {
 checkedInjuries.push(checkbox.value);
+}
 });
+
+// Type of Incident and Outcome are SharePoint choice columns and only accept
+// their exact choice values, so the custom wording is appended to the details.
+const extraNotes = [];
+if (incidentType === 'Other' && typeOtherText) {
+extraNotes.push('Incident type (other): ' + typeOtherText);
+}
+if (incidentOutcome === 'Other' && outcomeOtherText) {
+extraNotes.push('Outcome (other): ' + outcomeOtherText);
+}
+let detailsValue = document.getElementById('incidentDetails').value;
+if (extraNotes.length) {
+detailsValue += '\n\n' + extraNotes.join('\n');
+}
 
 const payload = {
 siteCode: siteCodeInput.value,
@@ -491,14 +576,14 @@ siteName: siteNameValue,
 reporterName: document.getElementById('reporterName').value,
 reporterMobile: document.getElementById('reporterMobile').value,
 dateReported: document.getElementById('dateReported').value,
-incidentType: document.querySelector('input[name="incidentType"]:checked')?.value || "",
+incidentType: incidentType,
 involvedName: document.getElementById('involvedName').value || "",
 involvedMobile: document.getElementById('involvedMobile').value || "",
 involvedEmployer: document.getElementById('involvedEmployer').value || "",
 dateOfIncident: document.getElementById('dateOfIncident').value || "",
 injuryTypes: checkedInjuries.join(', '),
-incidentDetails: document.getElementById('incidentDetails').value,
-incidentOutcome: document.querySelector('input[name="incidentOutcome"]:checked')?.value || "",
+incidentDetails: detailsValue,
+incidentOutcome: incidentOutcome,
 witness1Name: document.getElementById('witness1Name').value || "",
 witness1Mobile: document.getElementById('witness1Mobile').value || "",
 witness2Name: document.getElementById('witness2Name').value || "",
@@ -523,6 +608,8 @@ siteCodeInput.value = currentSiteCode;
 if (siteSelect) siteSelect.value = currentSiteCode;
 attachments = [];
 fileCountDiv.textContent = '';
+// reset() unticks the boxes, so hide the "please specify" fields again
+otherSyncs.forEach(fn => fn());
 } else {
 statusDiv.style.backgroundColor = '#f8d7da';
 statusDiv.style.color = '#721c24';
