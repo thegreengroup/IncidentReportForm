@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Report Form</title>
+<style>
+:root {
+--primary-color: #0078d4; /* Microsoft accessible blue */
+--text-color: #242424;
+--bg-color: #f3f2f1;
+--border-color: #8a8886;
+}
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+background-color: var(--bg-color);
+color: var(--text-color);
+margin: 0;
+padding: 15px;
+display: flex;
+justify-content: center;
+}
+.form-container {
+background: #ffffff;
+padding: 25px;
+border-radius: 4px;
+box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+max-width: 600px;
+width: 100%;
+}
+h1 {
+font-size: 1.6rem;
+margin-top: 0;
+color: #000;
+text-align: center;
+border-bottom: 2px solid var(--primary-color);
+padding-bottom: 10px;
+}
+fieldset {
+border: 1px solid var(--border-color);
+border-radius: 4px;
+padding: 20px;
+margin-bottom: 25px;
+}
+legend {
+font-weight: bold;
+font-size: 1.1rem;
+padding: 0 10px;
+color: var(--primary-color);
+}
+.form-group { margin-bottom: 15px; }
+
+label {
+display: block;
+font-weight: 600;
+margin-bottom: 6px;
+}
+
+/* Site banner - shows which site the QR code selected */
+.site-banner {
+background: #eff6fc;
+border: 1px solid var(--primary-color);
+border-left: 5px solid var(--primary-color);
+border-radius: 4px;
+padding: 12px 15px;
+margin-bottom: 25px;
+}
+.site-banner .site-banner-label {
+display: block;
+font-size: 0.75rem;
+text-transform: uppercase;
+letter-spacing: 0.06em;
+color: #605e5c;
+margin-bottom: 3px;
+font-weight: 600;
+}
+.site-banner .site-banner-name {
+font-size: 1.15rem;
+font-weight: 700;
+}
+
+/* Text input and Select enhancements */
+input[type="text"],
+input[type="tel"],
+input[type="date"],
+select,
+textarea,
+input[type="file"] {
+width: 100%;
+padding: 12px;
+border: 1px solid var(--border-color);
+border-radius: 4px;
+box-sizing: border-box;
+font-size: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+outline: 3px solid var(--primary-color);
+outline-offset: 1px;
+}
+
+/* Nothing in the form may exceed its container */
+input, select, textarea { max-width: 100%; }
+
+/* iOS Safari gives date inputs an intrinsic width from the native control and
+   ignores box-sizing, so width:100% alone lets them spill past the fieldset.
+   Stripping the native appearance and allowing the box to shrink fixes it. */
+input[type="date"] {
+-webkit-appearance: none;
+appearance: none;
+display: block;
+min-width: 0;
+}
+input[type="date"]::-webkit-date-and-time-value {
+text-align: left;
+margin: 0;
+min-width: 0;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+margin-left: auto;
+flex-shrink: 0;
+}
+
+/* A long filename can push the file input wide the same way */
+input[type="file"] {
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+/* Reclaim horizontal space on small screens */
+@media (max-width: 480px) {
+body { padding: 10px; }
+.form-container { padding: 18px 15px; }
+fieldset { padding: 15px 12px; }
+legend { font-size: 1rem; }
+}
+
+/* Accessible radio & checkbox styling for mobile fingers */
+.choice-group {
+display: flex;
+align-items: center;
+margin-bottom: 10px;
+}
+.choice-group input[type="radio"],
+.choice-group input[type="checkbox"] {
+width: 22px;
+height: 22px;
+margin-right: 12px;
+cursor: pointer;
+}
+.choice-group label {
+margin-bottom: 0;
+cursor: pointer;
+font-weight: normal;
+}
+
+/* Mobile optimization for file upload button */
+input[type="file"]::file-selector-button {
+padding: 8px 16px;
+border: 1px solid var(--primary-color);
+background: #fff;
+color: var(--primary-color);
+border-radius: 4px;
+font-weight: 600;
+cursor: pointer;
+}
+
+#fileCount {
+margin-top: 8px;
+font-size: 0.9rem;
+color: #605e5c;
+}
+
+button[type="submit"] {
+width: 100%;
+padding: 16px;
+background-color: var(--primary-color);
+color: white;
+border: none;
+border-radius: 4px;
+font-size: 1.2rem;
+font-weight: 600;
+cursor: pointer;
+margin-top: 10px;
+}
+button[type="submit"]:focus {
+outline: 3px solid #000;
+}
+.status-message {
+margin-top: 15px;
+font-weight: 600;
+display: none;
+text-align: center;
+padding: 10px;
+border-radius: 4px;
+}
+.required { color: red; }
+</style>
+</head>
+<body>
+
+<div class="form-container">
+<h1>INCIDENT REPORT FORM</h1>
+
+<form id="incidentForm">
+<!-- Site: set automatically from the QR code -->
+<input type="hidden" id="siteCode" name="siteCode" value="">
+
+<!-- Shown when a valid ?site= code is present -->
+<div id="siteBanner" class="site-banner" style="display:none;">
+<span class="site-banner-label">Site</span>
+<span class="site-banner-name" id="siteBannerName"></span>
+</div>
+
+<!-- Shown only when there is no valid ?site= code -->
+<fieldset id="sitePicker" style="display:none;">
+<legend>Site <span class="required">*</span></legend>
+<div class="form-group">
+<label for="siteSelect">Which site are you reporting for?</label>
+<select id="siteSelect">
+<option value="">-- select a site --</option>
+<option value="AGKC">Andreasens Green Kemps Creek</option>
+<option value="AGMM">Andreasens Green Mangrove Mountain</option>
+<option value="AGLV">Andreasens Green Lansvale</option>
+<option value="ELLI">Ellisons</option>
+<option value="ALAL">Alpine Alstonville</option>
+<option value="ALDU">Alpine Dural</option>
+<option value="OASP">Oasis Springwood</option>
+<option value="OACR">Oasis Cranbourne</option>
+</select>
+</div>
+</fieldset>
+
+<!-- SECTION 1: REPORTED BY -->
+<fieldset>
+<legend>Reported By</legend>
+<div class="form-group">
+<label for="reporterName">Name <span class="required">*</span></label>
+<input type="text" id="reporterName" required aria-required="true" autocomplete="name">
+</div>
+<div class="form-group">
+<label for="reporterMobile">Mobile Number <span class="required">*</span></label>
+<input type="tel" id="reporterMobile" required aria-required="true" autocomplete="tel">
+</div>
+<div class="form-group">
+<label for="dateReported">Date Reported <span class="required">*</span></label>
+<input type="date" id="dateReported" required aria-required="true">
+</div>
+</fieldset>
+
+<!-- SECTION 2: TYPE OF INCIDENT -->
+<!-- values must match the SharePoint 'Type of Incident' choices exactly -->
+<fieldset>
+<legend>Type of Incident <span class="required">*</span></legend>
+<div class="choice-group">
+<input type="radio" id="typeInjury" name="incidentType" value="Physical Injury" required>
+<label for="typeInjury">Physical injury</label>
+</div>
+<div class="choice-group">
+<input type="radio" id="typeVehicle" name="incidentType" value="Vehicle Accident">
+<label for="typeVehicle">Vehicle accident</label>
+</div>
+<div class="choice-group">
+<input type="radio" id="typeMiss" name="incidentType" value="Near Miss">
+<label for="typeMiss">Near miss</label>
+</div>
+</fieldset>
+
+<!-- SECTION 3: PERSONAL DETAILS -->
+<fieldset>
+<legend>Personal Details (Person Involved)</legend>
+<div class="form-group">
+<label for="involvedName">Name of person/s involved</label>
+<input type="text" id="involvedName">
+</div>
+<div class="form-group">
+<label for="involvedMobile">Mobile Number</label>
+<input type="tel" id="involvedMobile">
+</div>
+<div class="form-group">
+<label for="involvedEmployer">Employer</label>
+<input type="text" id="involvedEmployer">
+</div>
+<div class="form-group">
+<label for="dateOfIncident">Date of Incident</label>
+<input type="date" id="dateOfIncident">
+</div>
+</fieldset>
+
+<!-- SECTION 4: TYPE OF INJURY -->
+<fieldset>
+<legend>Type of Injury (If applicable)</legend>
+<div class="choice-group">
+<input type="checkbox" id="injuryBurn" name="injuryType" value="Burn">
+<label for="injuryBurn">Burn</label>
+</div>
+<div class="choice-group">
+<input type="checkbox" id="injuryFracture" name="injuryType" value="Fractures">
+<label for="injuryFracture">Fractures</label>
+</div>
+<div class="choice-group">
+<input type="checkbox" id="injurySprain" name="injuryType" value="Sprain/strain">
+<label for="injurySprain">Sprain/strain</label>
+</div>
+<div class="choice-group">
+<input type="checkbox" id="injuryWound" name="injuryType" value="Open wound">
+<label for="injuryWound">Open wound</label>
+</div>
+<div class="choice-group">
+<input type="checkbox" id="injuryConcussion" name="injuryType" value="Concussion">
+<label for="injuryConcussion">Concussion</label>
+</div>
+<div class="choice-group">
+<input type="checkbox" id="injurySuperficial" name="injuryType" value="Superficial injury">
+<label for="injurySuperficial">Superficial injury</label>
+</div>
+</fieldset>
+
+<!-- SECTION 5: DETAILS -->
+<fieldset>
+<legend>Details of Incident <span class="required">*</span></legend>
+<div class="form-group">
+<label for="incidentDetails">Please explain who, what, where, when and how:</label>
+<textarea id="incidentDetails" rows="6" required aria-required="true"></textarea>
+</div>
+</fieldset>
+
+<!-- SECTION 6: OUTCOME -->
+<!-- values must match the SharePoint 'Outcome of Incident' choices exactly -->
+<fieldset>
+<legend>Outcome of Incident</legend>
+<div class="choice-group">
+<input type="radio" id="outcomeDoctor" name="incidentOutcome" value="Taken to Doctor">
+<label for="outcomeDoctor">Taken to doctor</label>
+</div>
+<div class="choice-group">
+<input type="radio" id="outcomeHospital" name="incidentOutcome" value="Taken to Hospital">
+<label for="outcomeHospital">Taken to hospital</label>
+</div>
+<div class="choice-group">
+<input type="radio" id="outcomeFirstAid" name="incidentOutcome" value="First Aid Applied">
+<label for="outcomeFirstAid">First aid applied</label>
+</div>
+<div class="choice-group">
+<input type="radio" id="outcomeHome" name="incidentOutcome" value="Employee Sent Home">
+<label for="outcomeHome">Employee sent home to recuperate</label>
+</div>
+<div class="choice-group">
+<input type="radio" id="outcomeOther" name="incidentOutcome" value="Other">
+<label for="outcomeOther">Other</label>
+</div>
+</fieldset>
+
+<!-- SECTION 7: WITNESSES -->
+<fieldset>
+<legend>Witness Details</legend>
+<div class="form-group" style="margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
+<label for="witness1Name">Witness 1 Name</label>
+<input type="text" id="witness1Name" style="margin-bottom: 10px;">
+<label for="witness1Mobile">Witness 1 Mobile Number</label>
+<input type="tel" id="witness1Mobile">
+</div>
+<div class="form-group">
+<label for="witness2Name">Witness 2 Name</label>
+<input type="text" id="witness2Name" style="margin-bottom: 10px;">
+<label for="witness2Mobile">Witness 2 Mobile Number</label>
+<input type="tel" id="witness2Mobile">
+</div>
+</fieldset>
+
+<fieldset>
+<legend>Attachments</legend>
+<div class="form-group">
+<label for="fileUpload">Upload Photos or Documents</label>
+<input type="file" id="fileUpload" accept="image/*,application/pdf" multiple>
+<div id="fileCount"></div>
+</div>
+</fieldset>
+
+<button type="submit">Submit Incident Report</button>
+<div id="status" class="status-message" role="status" aria-live="polite"></div>
+</form>
+</div>
+
+<script>
+// ============================================================
+// PASTE THE NEW "Incident Report - Intake" TRIGGER URL HERE.
+// The URL below still points at the OLD suspended flow.
+// Power Automate > Incident Report - Intake > Edit > click the
+// "manual" trigger > copy the HTTP URL field.
+// ============================================================
+const webhookUrl = "https://defaultbfb72bc2b4744f8398fb1a61d4008d.51.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/806207fc6c7345029e85a5e9a7a1e5cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qtHECK-2OKNWJujvRXy3aOwIU0Mg1zhJDWZbsThDFI4";
+
+const SITES = {
+AGKC: "Andreasens Green Kemps Creek",
+AGMM: "Andreasens Green Mangrove Mountain",
+AGLV: "Andreasens Green Lansvale",
+ELLI: "Ellisons",
+ALAL: "Alpine Alstonville",
+ALDU: "Alpine Dural",
+OASP: "Oasis Springwood",
+OACR: "Oasis Cranbourne"
+};
+
+const siteCodeInput = document.getElementById('siteCode');
+const siteSelect = document.getElementById('siteSelect');
+const fileInput = document.getElementById('fileUpload');
+const fileCountDiv = document.getElementById('fileCount');
+let currentSiteCode = '';
+
+(function initSite() {
+const code = (new URLSearchParams(location.search).get('site') || '').trim().toUpperCase();
+
+if (SITES[code]) {
+// Scanned a valid QR code - lock the site in and show it for confirmation
+currentSiteCode = code;
+siteCodeInput.value = code;
+document.getElementById('siteBannerName').textContent = SITES[code];
+document.getElementById('siteBanner').style.display = 'block';
+} else {
+// No QR parameter (bookmark, typed URL, damaged sticker) - make them choose
+document.getElementById('sitePicker').style.display = 'block';
+siteSelect.addEventListener('change', function () {
+currentSiteCode = siteSelect.value;
+siteCodeInput.value = siteSelect.value;
+});
+}
+})();
+
+// Set today's date automatically as default on load
+document.getElementById('dateReported').valueAsDate = new Date();
+
+// Show how many files are attached
+fileInput.addEventListener('change', function () {
+const n = fileInput.files.length;
+fileCountDiv.textContent = n === 0 ? '' : (n === 1 ? '1 file attached' : n + ' files attached');
+});
+
+// Read one file into { name, content } where content is base64
+const readFile = (file) => new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = () => resolve({ name: file.name, content: reader.result.split(',')[1] });
+reader.onerror = () => reject(reader.error);
+reader.readAsDataURL(file);
+});
+
+// SharePoint rejects two attachments with the same name on one item.
+// Phones often hand over several photos all called image.jpg.
+const uniqueNames = (files) => {
+const seen = {};
+return files.map(f => {
+if (seen[f.name]) {
+const n = ++seen[f.name];
+const dot = f.name.lastIndexOf('.');
+f.name = dot > 0 ? f.name.slice(0, dot) + '-' + n + f.name.slice(dot) : f.name + '-' + n;
+} else {
+seen[f.name] = 1;
+}
+return f;
+});
+};
+
+document.getElementById('incidentForm').addEventListener('submit', function(e) {
+e.preventDefault();
+
+const statusDiv = document.getElementById('status');
+statusDiv.style.display = 'block';
+statusDiv.style.backgroundColor = '#fff2cc';
+statusDiv.style.color = '#333';
+statusDiv.innerText = "Processing attachments and submitting report...";
+
+let attachments = [];
+
+const proceedWithSubmit = () => {
+const siteNameValue = SITES[siteCodeInput.value];
+if (!siteNameValue) {
+statusDiv.style.backgroundColor = '#f8d7da';
+statusDiv.style.color = '#721c24';
+statusDiv.innerText = "Please select which site this report is for.";
+return;
+}
+
+const checkedInjuries = [];
+document.querySelectorAll('input[name="injuryType"]:checked').forEach((checkbox) => {
+checkedInjuries.push(checkbox.value);
+});
+
+const payload = {
+siteCode: siteCodeInput.value,
+siteName: siteNameValue,
+reporterName: document.getElementById('reporterName').value,
+reporterMobile: document.getElementById('reporterMobile').value,
+dateReported: document.getElementById('dateReported').value,
+incidentType: document.querySelector('input[name="incidentType"]:checked')?.value || "",
+involvedName: document.getElementById('involvedName').value || "",
+involvedMobile: document.getElementById('involvedMobile').value || "",
+involvedEmployer: document.getElementById('involvedEmployer').value || "",
+dateOfIncident: document.getElementById('dateOfIncident').value || "",
+injuryTypes: checkedInjuries.join(', '),
+incidentDetails: document.getElementById('incidentDetails').value,
+incidentOutcome: document.querySelector('input[name="incidentOutcome"]:checked')?.value || "",
+witness1Name: document.getElementById('witness1Name').value || "",
+witness1Mobile: document.getElementById('witness1Mobile').value || "",
+witness2Name: document.getElementById('witness2Name').value || "",
+witness2Mobile: document.getElementById('witness2Mobile').value || "",
+attachments: attachments
+};
+
+const xhr = new XMLHttpRequest();
+xhr.open("POST", webhookUrl, true);
+xhr.setRequestHeader("Content-Type", "application/json");
+
+xhr.onreadystatechange = function () {
+if (xhr.readyState === 4) {
+if (xhr.status === 200 || xhr.status === 202) {
+statusDiv.style.backgroundColor = '#d4edda';
+statusDiv.style.color = '#155724';
+statusDiv.innerText = "Success! The incident report has been securely logged.";
+document.getElementById('incidentForm').reset();
+document.getElementById('dateReported').valueAsDate = new Date();
+// form.reset() wipes these, so put them back for a second report
+siteCodeInput.value = currentSiteCode;
+if (siteSelect) siteSelect.value = currentSiteCode;
+attachments = [];
+fileCountDiv.textContent = '';
+} else {
+statusDiv.style.backgroundColor = '#f8d7da';
+statusDiv.style.color = '#721c24';
+statusDiv.innerText = "Submission target rejected the payload. Please verify backend fields.";
+}
+}
+};
+
+xhr.onerror = function () {
+statusDiv.style.backgroundColor = '#f8d7da';
+statusDiv.style.color = '#721c24';
+statusDiv.innerText = "Network submission blocked. Check browser console or endpoint rules.";
+};
+
+xhr.send(JSON.stringify(payload));
+};
+
+// Read every selected file, then submit
+if (fileInput.files.length > 0) {
+Promise.all(Array.from(fileInput.files).map(readFile))
+.then(results => {
+attachments = uniqueNames(results);
+proceedWithSubmit();
+})
+.catch(() => {
+statusDiv.style.backgroundColor = '#f8d7da';
+statusDiv.style.color = '#721c24';
+statusDiv.innerText = "Couldn't read one of the attached files. Try again, or submit without it.";
+});
+} else {
+proceedWithSubmit();
+}
+});
+
+</script>
+
+</body>
+</html>
